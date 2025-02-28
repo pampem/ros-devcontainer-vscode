@@ -1,0 +1,21 @@
+ROS 1 noetic, roscppを用いたドローン(ardupilot, use mavros)の制御プログラムを書いてほしい。
+
+要件は以下。
+
+- ドローンは3台。
+- Loiterモードにて手動で打ち上げたのち、Guidedモードに入れて制御を開始する。
+- Drone1のTopicは、例として、/drone1/mavros/setpoint_velocity/cmd_vel_unstamped
+- drone1, drone2, drone3がいる。
+- motion captureシステムを用いており、高精度にそれぞれの位置を取得可能。
+- 位置は/drone1/mavros/local_position/pose で取得可能。これをSubscribeする。
+- joy controllerを用いて制御する。つまりjoyパッケージを用いてその出力をSubしてこれを用いて制御する。
+- まずは単機能を実装。Joyスティックの傾きに応じて、現在の高度にて前後左右に3台のドローンが動作する。
+- Joyスティックが戻れば元の位置に戻るようにする。
+- 早すぎる行動が起こらないようにうまく調整する。広くないのでそんなに大きく動く必要はない。
+- 2m*2mの範囲を動くくらいで大丈夫。ドローンは3角形に、50cmくらいの間隔で置くことにする。
+- drone1 を先頭に、左下にdrone2, 右下にdrone3とする。
+- それぞれのドローンではmavrosが動作しており、グラウンドPC(これがHOST, roscoreを動作させる)からTopicを送って制御可能。
+- /droneX/mavros/setpoint_velocity/cmd_vel_unstamped topicを用いて、それぞれのドローンを制御する。
+- Position情報を用いて、手元にてPID制御を実行、狙った位置に来るように制御する。
+- cppを用いて実装。ros1 noetic. includeヘッダーと実装をわける。
+- HPPとCPPのコードを提供してください。

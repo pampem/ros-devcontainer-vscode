@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>drone_demo</name>
+  <version>0.0.0</version>
+  <description>The drone_demo package</description>
+
+  <maintainer email="root@todo.todo">root</maintainer>
+  <license>TODO</license>
+
+  <!-- 依存パッケージを列挙 -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- ビルド時に必要 -->
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>mavros_msgs</build_depend>
+
+  <!-- 実行時に必要 -->
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>mavros_msgs</exec_depend>
+  <exec_depend>joy</exec_depend>
+
+  <export>
+  </export>
+</package>

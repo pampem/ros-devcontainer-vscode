@@ -46,7 +46,7 @@ $ git clone https://github.com/devrt/ros-devcontainer-vscode.git
 2. Enter the following command under the folder of the cloned project:
 ```shell
 $ cd ros-devcontainer-vscode
-$ docker-compose up
+$ docker compose up
 ```
 
 3. Open http://localhost:3001/ using your favorite browser.

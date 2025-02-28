@@ -1,5 +1,4 @@
 {
-    "workbench.colorTheme": "Monokai",
     "fileTemplates.templates_dir": "/home/developer/templates",
     "files.associations": {
         "*.launch": "xml",
