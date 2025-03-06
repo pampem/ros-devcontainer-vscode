@@ -44,6 +44,7 @@ services:
     - ROS_MASTER_URI=http://simulator:11311/
     devices:
     - "/dev/input/js0:/dev/input/js0" # for joystick
+    - "/dev/input/js1:/dev/input/js1" # for joystick
     volumes_from:
     - xserver
     - simulator

@@ -14,9 +14,6 @@ MultiDroneController::MultiDroneController()
   joy_scale_  = 0.5;   // ジョイスティック最大倒しで、±0.5[m]くらい動くイメージ
   max_offset_ = 1.0;   // 目標オフセットは最大±1.0[m]に制限
 
-  //***********************
-  // サブスクライバ / パブリッシャの設定
-  //***********************
   joy_sub_ = nh_.subscribe("/joy", 1, &MultiDroneController::joyCallback, this);
 
   // ドローン1
@@ -44,7 +41,7 @@ MultiDroneController::MultiDroneController()
   // PIDコントローラの初期化
   //***********************
   // 例: P=1.0, I=0.0, D=0.0, 積分制限±0.0
-  // 実際には適切にチューニングしてください
+
   double P = 1.0;
   double I = 0.0;
   double D = 0.0;
@@ -59,31 +56,6 @@ MultiDroneController::MultiDroneController()
     pid_controllers_[i].push_back(SimplePID(P,I,D,I_max,I_min)); // Y軸
     pid_controllers_[i].push_back(SimplePID(P,I,D,I_max,I_min)); // Z軸
   }
-
-  // //***********************
-  // // モード切替（GUIDED）例
-  // //***********************
-  // // 本来はLoiterで打ち上げ後、このコードでGUIDEDに切り替えるイメージ
-  // // 必要に応じてコメントアウトするか検討してください
-  // {
-  //   mavros_msgs::SetMode mode_cmd;
-  //   mode_cmd.request.custom_mode = "GUIDED";
-
-  //   if (drone1_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-  //     ROS_INFO("[drone1] GUIDED mode set.");
-  //   else
-  //     ROS_WARN("[drone1] Failed to set GUIDED mode.");
-
-  //   if (drone2_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-  //     ROS_INFO("[drone2] GUIDED mode set.");
-  //   else
-  //     ROS_WARN("[drone2] Failed to set GUIDED mode.");
-
-  //   if (drone3_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-  //     ROS_INFO("[drone3] GUIDED mode set.");
-  //   else
-  //     ROS_WARN("[drone3] Failed to set GUIDED mode.");
-  // }
 
   prev_time_ = ros::Time::now();
 }
@@ -279,6 +251,7 @@ void MultiDroneController::run()
 
     ros::Time now = ros::Time::now();
     double dt = (now - prev_time_).toSec();
+    if (dt <= 0) dt = 0.05;
     prev_time_ = now;
 
     // 各ドローンに速度コマンドを送る

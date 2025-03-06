@@ -33,21 +33,27 @@ tmux send-keys -t drone_sim:SITL3 "cd ~/git-repository/ardupilot/ArduCopter && .
 echo "SITL3 started"
 sleep 2s
 
-sleep 10s
+sleep 15s
 
 # MAVROS1
 tmux new-window -t drone_sim -n MAVROS1
 tmux send-keys -t drone_sim:MAVROS1 "roslaunch mavros apm.launch fcu_url:=udp://127.0.0.1:14550@14555 __ns:=/drone1" C-m
 echo "MAVROS1 started"
 
+sleep 2s
+
 # MAVROS2
 tmux new-window -t drone_sim -n MAVROS2
 tmux send-keys -t drone_sim:MAVROS2 "roslaunch mavros apm.launch fcu_url:=udp://127.0.0.1:14560@14565 __ns:=/drone2" C-m
 echo "MAVROS2 started"
 
+sleep 2s
+
 # MAVROS3
 tmux new-window -t drone_sim -n MAVROS3
 tmux send-keys -t drone_sim:MAVROS3 "roslaunch mavros apm.launch fcu_url:=udp://127.0.0.1:14570@14575 __ns:=/drone3" C-m
 echo "MAVROS3 started"
+
+sleep 2s
 
 tmux attach -t drone_sim

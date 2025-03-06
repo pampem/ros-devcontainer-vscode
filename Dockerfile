@@ -112,7 +112,8 @@ RUN apt update && apt install -y \
     python3-pip \
     python3-matplotlib \
     python3-lxml \
-    python3-pygame && \
+    python3-pygame \
+    tmux \
     && rm -rf /var/lib/apt/lists/*
 
 RUN /opt/ros/$ROS_DISTRO/lib/mavros/install_geographiclib_datasets.sh
