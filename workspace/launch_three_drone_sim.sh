@@ -9,7 +9,7 @@ echo "Starting simulation using tmux..."
 tmux new-session -d -s drone_sim -n main
 
 # Gazebo
-tmux send-keys -t drone_sim "gazebo --verbose ~/git-repository/ardupilot_gazebo/worlds/iris_arducopter_runway_three_drone.world" C-m
+tmux send-keys -t drone_sim "gazebo --verbose ~/git-repository/ardupilot_gazebo/worlds/iris_arducopter_runway_three_drones.world" C-m
 echo "Gazebo started"
 
 sleep 2s

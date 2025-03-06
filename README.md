@@ -1,3 +1,21 @@
+add by Masashi Izumita
+==
+devcontainerは使わない。
+docker compose build
+docker compose up
+ですべてを起動。
+コンテナイメージを使う方法から、dockerfileでいろいろつくる方法に切り替えた。
+それにより環境構築がどの環境でも等しく共有されるようになった。
+docker imagesとかでいまあるimageを表示できる。
+docker compose downで落とす。その後Build.
+
+install-prereqs-ubuntu.shは手動実行が必要かも。コンテナ内で。
+```
+./git-repository/ardupilot/Tools/environment_install/install-prereqs-ubuntu.sh -y
+```
+==
+add finish
+
 ROS dev container for VSCode
 ----------------------------
 Packed with:

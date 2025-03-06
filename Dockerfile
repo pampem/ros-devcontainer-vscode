@@ -33,8 +33,6 @@ RUN mkdir -p /opt/xsd/urdf && \
 
 FROM $BASE_IMAGE
 
-MAINTAINER Yosuke Matsusaka <yosuke.matsusaka@gmail.com>
-
 SHELL ["/bin/bash", "-c"]
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -97,6 +95,27 @@ RUN useradd -m developer && \
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y ros-$ROS_DISTRO-desktop ros-$ROS_DISTRO-gazebo-msgs ros-$ROS_DISTRO-moveit ros-$ROS_DISTRO-moveit-commander ros-$ROS_DISTRO-moveit-ros-visualization ros-$ROS_DISTRO-trac-ik ros-$ROS_DISTRO-move-base-msgs ros-$ROS_DISTRO-ros-numpy && \
     apt-get clean
+
+RUN apt update && apt install -y \
+    ros-noetic-joy \
+    ros-noetic-teleop-twist-joy \
+    ros-noetic-teleop-twist-keyboard \
+    ros-noetic-mavros \
+    ros-noetic-mavros-extras \
+    ros-noetic-mavlink \
+    ros-noetic-geographic-msgs \
+    gazebo11 \
+    libgazebo11-dev \
+    python3-dev \
+    python3-opencv \
+    python3-wxgtk4.0 \
+    python3-pip \
+    python3-matplotlib \
+    python3-lxml \
+    python3-pygame && \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN /opt/ros/$ROS_DISTRO/lib/mavros/install_geographiclib_datasets.sh
 
 # temporal hack to fix ros_numpy problem
 RUN if [ $(lsb_release -cs) = "focal" ]; then \
@@ -164,7 +183,41 @@ ADD .vscode /home/developer/.vscode
 RUN ln -s /home/developer/.vscode /home/developer/.vscode-server
 ADD .devcontainer/compile_flags.txt /home/developer/compile_flags.txt
 ADD .devcontainer/templates /home/developer/templates
+
+# /home/developer/git-repository フォルダを作成し、権限を設定
+RUN mkdir -p /home/developer/git-repository && \
+    sudo chown -R developer:developer /home/developer/git-repository
+
+# Clone
+RUN git clone --depth=1 -b gazebo11 https://github.com/pampem/ardupilot_gazebo.git /home/developer/git-repository/ardupilot_gazebo
+RUN git clone --depth=1 --recursive https://github.com/pampem/ardupilot.git /home/developer/git-repository/ardupilot
+
 RUN sudo chown -R developer:developer /home/developer
+
+USER developer
+RUN cd /home/developer/git-repository/ardupilot/Tools/environment_install && \
+    chmod +x install-prereqs-ubuntu.sh && \
+    ./install-prereqs-ubuntu.sh -y || true
+
+RUN cd /home/developer/git-repository/ardupilot_gazebo && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j4
+
+USER root
+RUN cd /home/developer/git-repository/ardupilot_gazebo/build && \
+    sudo make install
+
+USER developer
+# pipでPythonパッケージをインストール
+RUN python3 -m pip install --no-cache-dir PyYAML mavproxy --user
+
+# 環境変数を設定
+RUN echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+
+RUN echo 'source /usr/share/gazebo/setup.sh' >> ~/.bashrc && \
+    echo 'export GAZEBO_MODEL_PATH=~/git-repository/ardupilot_gazebo/models' >> ~/.bashrc && \
+    echo 'export GAZEBO_RESOURCE_PATH=~/git-repository/ardupilot_gazebo/worlds:${GAZEBO_RESOURCE_PATH}' >> ~/.bashrc
 
 RUN code --install-extension ms-python.python && \
     code --install-extension ms-vscode.cpptools-extension-pack && \
