@@ -60,30 +60,30 @@ MultiDroneController::MultiDroneController()
     pid_controllers_[i].push_back(SimplePID(P,I,D,I_max,I_min)); // Z軸
   }
 
-  //***********************
-  // モード切替（GUIDED）例
-  //***********************
-  // 本来はLoiterで打ち上げ後、このコードでGUIDEDに切り替えるイメージ
-  // 必要に応じてコメントアウトするか検討してください
-  {
-    mavros_msgs::SetMode mode_cmd;
-    mode_cmd.request.custom_mode = "GUIDED";
+  // //***********************
+  // // モード切替（GUIDED）例
+  // //***********************
+  // // 本来はLoiterで打ち上げ後、このコードでGUIDEDに切り替えるイメージ
+  // // 必要に応じてコメントアウトするか検討してください
+  // {
+  //   mavros_msgs::SetMode mode_cmd;
+  //   mode_cmd.request.custom_mode = "GUIDED";
 
-    if (drone1_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-      ROS_INFO("[drone1] GUIDED mode set.");
-    else
-      ROS_WARN("[drone1] Failed to set GUIDED mode.");
+  //   if (drone1_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
+  //     ROS_INFO("[drone1] GUIDED mode set.");
+  //   else
+  //     ROS_WARN("[drone1] Failed to set GUIDED mode.");
 
-    if (drone2_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-      ROS_INFO("[drone2] GUIDED mode set.");
-    else
-      ROS_WARN("[drone2] Failed to set GUIDED mode.");
+  //   if (drone2_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
+  //     ROS_INFO("[drone2] GUIDED mode set.");
+  //   else
+  //     ROS_WARN("[drone2] Failed to set GUIDED mode.");
 
-    if (drone3_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
-      ROS_INFO("[drone3] GUIDED mode set.");
-    else
-      ROS_WARN("[drone3] Failed to set GUIDED mode.");
-  }
+  //   if (drone3_.set_mode_client.call(mode_cmd) && mode_cmd.response.mode_sent)
+  //     ROS_INFO("[drone3] GUIDED mode set.");
+  //   else
+  //     ROS_WARN("[drone3] Failed to set GUIDED mode.");
+  // }
 
   prev_time_ = ros::Time::now();
 }
