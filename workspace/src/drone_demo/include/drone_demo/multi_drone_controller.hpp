@@ -94,6 +94,8 @@ private:
   // ジョイスティックからの入力値を格納
   double joy_x_; // 左右スティック (例: axes[0])
   double joy_y_; // 前後スティック (例: axes[1])
+  double joy_z_;   // 上下移動 (新規)
+  double joy_yaw_; // yaw回転 (新規)
 
   // ジョイスティック入力をどの程度のオフセット(目標位置変位)に変換するかのスケール
   double joy_scale_;

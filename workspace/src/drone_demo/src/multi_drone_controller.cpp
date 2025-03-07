@@ -1,18 +1,14 @@
 #include "drone_demo/multi_drone_controller.hpp"
 
 MultiDroneController::MultiDroneController()
-: joy_x_(0.0), joy_y_(0.0)
+: joy_x_(0.0), joy_y_(0.0), joy_z_(0.0), joy_yaw_(0.0) // ← 追加した変数を初期化
 {
   //***********************
   // パラメータの読み込み
   //***********************
-  // 例えばパラメータサーバーから読み込みたい場合は以下のようにする
-  // nh_.param("joy_scale", joy_scale_, 1.0);
-  // nh_.param("max_offset", max_offset_, 1.0);
-
-  // ここでは直接値を代入する例にします
-  joy_scale_  = 0.5;   // ジョイスティック最大倒しで、±0.5[m]くらい動くイメージ
-  max_offset_ = 1.0;   // 目標オフセットは最大±1.0[m]に制限
+  // ここでは直接値を代入するサンプル
+  joy_scale_  = 0.5;   
+  max_offset_ = 1.0;   
 
   joy_sub_ = nh_.subscribe("/joy", 1, &MultiDroneController::joyCallback, this);
 
@@ -40,15 +36,12 @@ MultiDroneController::MultiDroneController()
   //***********************
   // PIDコントローラの初期化
   //***********************
-  // 例: P=1.0, I=0.0, D=0.0, 積分制限±0.0
-
   double P = 1.0;
   double I = 0.0;
   double D = 0.0;
   double I_max = 0.0;
   double I_min = 0.0;
 
-  // [drone_index][x,y,z]で3機×3軸 = 3x3
   pid_controllers_.resize(3);
   for (int i = 0; i < 3; ++i)
   {
@@ -62,10 +55,13 @@ MultiDroneController::MultiDroneController()
 
 void MultiDroneController::joyCallback(const sensor_msgs::Joy::ConstPtr &msg)
 {
-  // 例として、axes[0] = 左右, axes[1] = 前後 として使用
-  // 実際のコントローラに合わせてインデックスを調整してください
-  joy_x_ = msg->axes[0];
-  joy_y_ = msg->axes[1];
+  // 例として、axes[0] = 左右(x), axes[1] = 前後(y) を既存で使っていた
+  // ここで axes[3] = yaw, axes[4] = 上下(z) として受け取る例
+  // コントローラによっては軸番号が違う場合もあるので注意
+  joy_x_   = (msg->axes[0])*-1;
+  joy_y_   = msg->axes[1];
+  joy_yaw_ = msg->axes[3];  // 右スティック 左右
+  joy_z_   = msg->axes[4];  // 右スティック 上下
 }
 
 void MultiDroneController::poseCallback1(const geometry_msgs::PoseStamped::ConstPtr &msg)
@@ -73,9 +69,9 @@ void MultiDroneController::poseCallback1(const geometry_msgs::PoseStamped::Const
   drone1_.current_pose = msg->pose;
   if(!drone1_.first_pose_received)
   {
-    // 初回受信時にhome_poseを設定
     drone1_.home_pose = msg->pose;
     drone1_.first_pose_received = true;
+    ROS_INFO("First pose of drone1 arrived");
   }
 }
 
@@ -86,6 +82,7 @@ void MultiDroneController::poseCallback2(const geometry_msgs::PoseStamped::Const
   {
     drone2_.home_pose = msg->pose;
     drone2_.first_pose_received = true;
+    ROS_INFO("First pose of drone2 arrived");
   }
 }
 
@@ -96,31 +93,33 @@ void MultiDroneController::poseCallback3(const geometry_msgs::PoseStamped::Const
   {
     drone3_.home_pose = msg->pose;
     drone3_.first_pose_received = true;
+    ROS_INFO("First pose of drone3 arrived");
   }
 }
 
-// 各ドローンの速度コマンドを発行
 void MultiDroneController::publishVelocityCommands(double dt)
 {
-  // それぞれのドローンについて、現在姿勢と目標位置を計算 → PID → Twistで速度指令をパブリッシュ
   // --------------------------------------------------
-  // ドローン1の計算
+  // ドローン1
   // --------------------------------------------------
   if(drone1_.first_pose_received)
   {
-    // ジョイスティック入力から、目標位置(home + offset) を決定
-    // xy平面方向のみ: joy_x_, joy_y_ をscaleし、±max_offset_にクリップ
+    // ★ Z（上下）方向のオフセットもジョイスティックから計算
     double target_offset_x = joy_x_ * joy_scale_;
     double target_offset_y = joy_y_ * joy_scale_;
+    double target_offset_z = joy_z_ * joy_scale_; // 追加: 上下オフセット
 
+    // クリップ
     if(target_offset_x >  max_offset_) target_offset_x =  max_offset_;
     if(target_offset_x < -max_offset_) target_offset_x = -max_offset_;
     if(target_offset_y >  max_offset_) target_offset_y =  max_offset_;
     if(target_offset_y < -max_offset_) target_offset_y = -max_offset_;
+    if(target_offset_z >  max_offset_) target_offset_z =  max_offset_;
+    if(target_offset_z < -max_offset_) target_offset_z = -max_offset_;
 
     double desired_x = drone1_.home_pose.position.x + target_offset_x;
     double desired_y = drone1_.home_pose.position.y + target_offset_y;
-    double desired_z = drone1_.home_pose.position.z; // 高度は維持(初期値)
+    double desired_z = drone1_.home_pose.position.z + target_offset_z; // ← ここが変更点
 
     double current_x = drone1_.current_pose.position.x;
     double current_y = drone1_.current_pose.position.y;
@@ -130,13 +129,11 @@ void MultiDroneController::publishVelocityCommands(double dt)
     double error_y = desired_y - current_y;
     double error_z = desired_z - current_z;
 
-    // PIDから速度コマンド算出
     double vx = pid_controllers_[0][0].computeCommand(error_x, dt);
     double vy = pid_controllers_[0][1].computeCommand(error_y, dt);
     double vz = pid_controllers_[0][2].computeCommand(error_z, dt);
 
-    // 安全のため速度をクリップ
-    double max_vel = 0.5; // [m/s] 例: 0.5
+    double max_vel = 0.5; // 速度上限
     if(vx >  max_vel) vx =  max_vel;
     if(vx < -max_vel) vx = -max_vel;
     if(vy >  max_vel) vy =  max_vel;
@@ -144,31 +141,37 @@ void MultiDroneController::publishVelocityCommands(double dt)
     if(vz >  max_vel) vz =  max_vel;
     if(vz < -max_vel) vz = -max_vel;
 
-    // Twistメッセージ
     geometry_msgs::Twist cmd_vel;
     cmd_vel.linear.x = vx;
     cmd_vel.linear.y = vy;
     cmd_vel.linear.z = vz;
-    cmd_vel.angular.z = 0.0;
+
+    // ★ yawは角速度で直接コマンド送る（シンプルにスケール値かけるだけなど）
+    double yaw_scale = 1.0; // 好きに調整可(最大何[rad/s]にするか等)
+    cmd_vel.angular.z = joy_yaw_ * yaw_scale;
 
     drone1_.vel_pub.publish(cmd_vel);
   }
 
   // --------------------------------------------------
-  // ドローン2の計算
+  // ドローン2
   // --------------------------------------------------
   if(drone2_.first_pose_received)
   {
     double target_offset_x = joy_x_ * joy_scale_;
     double target_offset_y = joy_y_ * joy_scale_;
+    double target_offset_z = joy_z_ * joy_scale_;
+
     if(target_offset_x >  max_offset_) target_offset_x =  max_offset_;
     if(target_offset_x < -max_offset_) target_offset_x = -max_offset_;
     if(target_offset_y >  max_offset_) target_offset_y =  max_offset_;
     if(target_offset_y < -max_offset_) target_offset_y = -max_offset_;
+    if(target_offset_z >  max_offset_) target_offset_z =  max_offset_;
+    if(target_offset_z < -max_offset_) target_offset_z = -max_offset_;
 
     double desired_x = drone2_.home_pose.position.x + target_offset_x;
     double desired_y = drone2_.home_pose.position.y + target_offset_y;
-    double desired_z = drone2_.home_pose.position.z;
+    double desired_z = drone2_.home_pose.position.z + target_offset_z;
 
     double current_x = drone2_.current_pose.position.x;
     double current_y = drone2_.current_pose.position.y;
@@ -194,24 +197,32 @@ void MultiDroneController::publishVelocityCommands(double dt)
     cmd_vel.linear.x = vx;
     cmd_vel.linear.y = vy;
     cmd_vel.linear.z = vz;
+
+    double yaw_scale = 1.0;
+    cmd_vel.angular.z = joy_yaw_ * yaw_scale;
+
     drone2_.vel_pub.publish(cmd_vel);
   }
 
   // --------------------------------------------------
-  // ドローン3の計算
+  // ドローン3
   // --------------------------------------------------
   if(drone3_.first_pose_received)
   {
     double target_offset_x = joy_x_ * joy_scale_;
     double target_offset_y = joy_y_ * joy_scale_;
+    double target_offset_z = joy_z_ * joy_scale_;
+
     if(target_offset_x >  max_offset_) target_offset_x =  max_offset_;
     if(target_offset_x < -max_offset_) target_offset_x = -max_offset_;
     if(target_offset_y >  max_offset_) target_offset_y =  max_offset_;
     if(target_offset_y < -max_offset_) target_offset_y = -max_offset_;
+    if(target_offset_z >  max_offset_) target_offset_z =  max_offset_;
+    if(target_offset_z < -max_offset_) target_offset_z = -max_offset_;
 
     double desired_x = drone3_.home_pose.position.x + target_offset_x;
     double desired_y = drone3_.home_pose.position.y + target_offset_y;
-    double desired_z = drone3_.home_pose.position.z;
+    double desired_z = drone3_.home_pose.position.z + target_offset_z;
 
     double current_x = drone3_.current_pose.position.x;
     double current_y = drone3_.current_pose.position.y;
@@ -237,13 +248,17 @@ void MultiDroneController::publishVelocityCommands(double dt)
     cmd_vel.linear.x = vx;
     cmd_vel.linear.y = vy;
     cmd_vel.linear.z = vz;
+
+    double yaw_scale = 1.0;
+    cmd_vel.angular.z = joy_yaw_ * yaw_scale;
+
     drone3_.vel_pub.publish(cmd_vel);
   }
 }
 
 void MultiDroneController::run()
 {
-  ros::Rate rate(20.0); // 20Hz
+  ros::Rate rate(20.0);
 
   while(ros::ok())
   {
@@ -254,7 +269,6 @@ void MultiDroneController::run()
     if (dt <= 0) dt = 0.05;
     prev_time_ = now;
 
-    // 各ドローンに速度コマンドを送る
     publishVelocityCommands(dt);
 
     rate.sleep();
