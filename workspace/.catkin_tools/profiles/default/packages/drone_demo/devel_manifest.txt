@@ -4,3 +4,4 @@ drone_demo
 /workspace/devel/.private/drone_demo/share/drone_demo/cmake/drone_demoConfig-version.cmake /workspace/devel/share/drone_demo/cmake/drone_demoConfig-version.cmake
 /workspace/devel/.private/drone_demo/lib/pkgconfig/drone_demo.pc /workspace/devel/lib/pkgconfig/drone_demo.pc
 /workspace/devel/.private/drone_demo/lib/drone_demo/multi_drone_controller /workspace/devel/lib/drone_demo/multi_drone_controller
+/workspace/devel/.private/drone_demo/lib/drone_demo/formation_control /workspace/devel/lib/drone_demo/formation_control

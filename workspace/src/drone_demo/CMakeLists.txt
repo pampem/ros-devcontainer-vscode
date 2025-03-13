@@ -41,8 +41,15 @@ add_executable(multi_drone_controller
   src/multi_drone_controller.cpp
 )
 
+add_executable(formation_control
+  src/formation_control.cpp
+)
+
 ## 実行ファイルとcatkinライブラリのリンク
 target_link_libraries(multi_drone_controller
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(formation_control
   ${catkin_LIBRARIES}
 )
 
@@ -52,6 +59,9 @@ target_link_libraries(multi_drone_controller
 
 ## 実行ファイルをインストール（必要に応じて）
 install(TARGETS multi_drone_controller
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+install(TARGETS formation_control
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
